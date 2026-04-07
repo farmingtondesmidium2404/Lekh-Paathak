@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" href="/icon-180x180px.jpg" type="image/jpeg" sizes="180x180">
+    <link rel="shortcut icon" href="/icon-192x192px.jpg" type="image/jpeg" sizes="192x192" />
+    <link rel="shortcut icon" href="/icon-512x512px.jpg" type="image/jpeg" sizes="512x512" />
+	<!-- <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' fill='%23fff'/%3E%3Cpath fill='%230557ff' d='M4 22q-.825 0-1.412-.587T2 20V4q0-.825.588-1.412T4 2h6q.425 0 .713.288T11 3t-.288.713T10 4H4v16h11v-1q0-.425.288-.712T16 18t.713.288T17 19v1q0 .825-.587 1.413T15 22zm3-4q-.425 0-.712-.288T6 17t.288-.712T7 16h5q.425 0 .713.288T13 17t-.288.713T12 18zm0-3q-.425 0-.712-.288T6 14t.288-.712T7 13h3q.425 0 .713.288T11 14t-.288.713T10 15zm2.5-4q-.625 0-1.062-.437T8 9.5v-2q0-.625.438-1.062T9.5 6H11l2.3-2.3q.125-.125.313-.213T14 3.4q.425 0 .713.3t.287.725v8.15q0 .425-.288.725t-.712.3q-.2 0-.387-.087T13.3 13.3L11 11zM19 8.5q0 .825-.325 1.575T17.75 11.4q-.2.2-.475.075t-.275-.45v-5.05q0-.3.275-.437t.475.062q.6.575.925 1.325T19 8.5m2 0q0-1.65-.837-3.05t-2.288-2.2q-.375-.2-.525-.587t0-.763q.15-.4.538-.562t.737.037q2.025 1.05 3.2 2.95T23 8.5t-1.175 4.175t-3.2 2.95q-.35.2-.737.038t-.538-.563q-.15-.375 0-.762t.525-.588q1.45-.8 2.288-2.2T21 8.5'/%3E%3C/svg%3E"> -->
+
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#f8fafc">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="लेख पाठक">
+
+    <title>लेख पाठक</title>
+    <meta name="description" content="अपने लेख को सुनते हुए लिखे">
+    <meta name="keywords" content="Online TTS Tool, Text Reader TTS, Online Text To Speech, Online Text Reader, Writing Assitant">
+    <meta name="robots" content="index, follow">
+    <meta name="googlebot" content="index, follow">
+
+    <link rel="stylesheet" href="/style.css">
+
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('SW registered:', reg.scope))
+                    .catch(err => console.log('SW registration failed:', err));
+            });
+        }
+    </script>
+
+    <script src="/script.js" defer></script>
+</head>
+<body>
+
+    <div class="layout">
+
+        <main class="main-content">
+
+            <header class="toolbar">
+                <div class="left-tools">
+                    <div class="pill-group">
+                        <button id="btnEditMode" class="btn btn-pill active" title="Edit Text">
+							<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M200-200h57l391-391-57-57-391 391v57Zm-40 80q-17 0-28.5-11.5T120-160v-97q0-16 6-30.5t17-25.5l505-504q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L313-143q-11 11-25.5 17t-30.5 6h-97Zm600-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/></svg>
+                            <span class="btn-label">Edit</span>
+                        </button>
+                        <button id="btnReadMode" class="btn btn-pill" title="Done Editing">
+							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="m9.55 15.15l8.475-8.475q.3-.3.7-.3t.7.3t.3.713t-.3.712l-9.175 9.2q-.3.3-.7.3t-.7-.3L4.55 13q-.3-.3-.288-.712t.313-.713t.713-.3t.712.3z"/></svg>
+                            <span class="btn-label">Read</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="center-playback disabled" id="centerPlayback">
+                     <button id="btnPrevSent" class="btn icon-btn ctrl-btn" title="Previous Sentence (Up)">
+						<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M440-608 324-492q-11 11-28 11t-28-11q-11-11-11-28t11-28l184-184q12-12 28-12t28 12l184 184q11 11 11 28t-11 28q-11 11-28 11t-28-11L520-608v328q0 17-11.5 28.5T480-240q-17 0-28.5-11.5T440-280v-328Z"/></svg>
+                    </button>
+                    <button id="btnPrevWord" class="btn icon-btn ctrl-btn" title="Previous Unit (Ctrl + Left)">
+						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 -960 960 960"><path d="m432-480 156 156q11 11 11 28t-11 28-28 11-28-11L348-452q-6-6-8-13t-3-15 3-15 8-13l184-184q11-11 28-11t28 11 11 28-11 28z"/></svg>
+                    </button>
+
+                    <button id="btnPlayPause" class="btn play-pause-btn" title="Play/Pause (Ctrl + Space)">
+						<svg class="play-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M8 17.175V6.825q0-.425.3-.713t.7-.287q.125 0 .263.037t.262.113l8.15 5.175q.225.15.338.375t.112.475t-.112.475t-.338.375l-8.15 5.175q-.125.075-.262.113T9 18.175q-.4 0-.7-.288t-.3-.712"/></svg>
+						<svg class="pause-icon hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M16 19q-.825 0-1.412-.587T14 17V7q0-.825.588-1.412T16 5t1.413.588T18 7v10q0 .825-.587 1.413T16 19m-8 0q-.825 0-1.412-.587T6 17V7q0-.825.588-1.412T8 5t1.413.588T10 7v10q0 .825-.587 1.413T8 19"/></svg>
+                    </button>
+
+                    <button id="btnNextWord" class="btn icon-btn ctrl-btn" title="Next Unit (Ctrl + Right)">
+						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 -960 960 960"><path d="M504-480 348-636q-11-11-11-28t11-28 28-11 28 11l184 184q6 6 9 13t2 15-2 15-9 13L404-268q-11 11-28 11t-28-11-11-28 11-28z"/></svg>
+                    </button>
+					<button id="btnNextSent" class="btn icon-btn ctrl-btn" title="Next Sentence (Down)">
+						<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M440-392v-328q0-17 11.5-28.5T480-760q17 0 28.5 11.5T520-720v328l116-116q11-11 28-11t28 11q11 11 11 28t-11 28L508-268q-12 12-28 12t-28-12L268-452q-11-11-11-28t11-28q11-11 28-11t28 11l116 116Z"/></svg>
+                    </button>
+                </div>
+
+                <div class="right-tools">
+                    <button id="btnThemeToggle" class="btn icon-btn" title="Toggle Theme (Light)">
+						<svg class="theme-icon theme-light" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M11.288 4.713Q11 4.425 11 4V2q0-.425.288-.712T12 1t.713.288T13 2v2q0 .425-.288.713T12 5t-.712-.288M16.95 7.05q-.275-.275-.275-.687t.275-.713l1.4-1.425q.3-.3.712-.3t.713.3q.275.275.275.7t-.275.7L18.35 7.05q-.275.275-.7.275t-.7-.275M20 13q-.425 0-.713-.288T19 12t.288-.712T20 11h2q.425 0 .713.288T23 12t-.288.713T22 13zm-8.712 9.713Q11 22.425 11 22v-2q0-.425.288-.712T12 19t.713.288T13 20v2q0 .425-.288.713T12 23t-.712-.288M5.65 7.05l-1.425-1.4q-.3-.3-.3-.725t.3-.7q.275-.275.7-.275t.7.275L7.05 5.65q.275.275.275.7t-.275.7q-.3.275-.7.275t-.7-.275m12.7 12.725l-1.4-1.425q-.275-.3-.275-.712t.275-.688t.688-.275t.712.275l1.425 1.4q.3.275.288.7t-.288.725q-.3.3-.725.3t-.7-.3M2 13q-.425 0-.712-.288T1 12t.288-.712T2 11h2q.425 0 .713.288T5 12t-.288.713T4 13zm2.225 6.775q-.275-.275-.275-.7t.275-.7L5.65 16.95q.275-.275.687-.275t.713.275q.3.3.3.713t-.3.712l-1.4 1.4q-.3.3-.725.3t-.7-.3M7.75 16.25Q6 14.5 6 12t1.75-4.25T12 6t4.25 1.75T18 12t-1.75 4.25T12 18t-4.25-1.75"/></svg>
+                        <svg class="theme-icon theme-bluish-dark hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M11.712 3.45a.75.75 0 0 0-.668-1.197c-5.414.494-8.436 4.752-8.764 9.105c-.328 4.361 2.037 8.975 7.451 10.166c5.686 1.25 11.472-2.837 12.016-8.646a.75.75 0 0 0-1.189-.676c-2.837 2.069-6.08 1.316-8.136-.724c-2.054-2.039-2.8-5.239-.71-8.028"/></svg>
+                        <svg class="theme-icon theme-amoled hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a7 7 0 1 0 10 10"/></g></svg>
+                        <svg class="theme-icon theme-system hidden" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M320-120v-80H160q-33 0-56.5-23.5T80-280v-480q0-33 23.5-56.5T160-840h640q33 0 56.5 23.5T880-760v480q0 33-23.5 56.5T800-200H640v80H320ZM160-280h640v-480H160v480Z"/></svg>
+                    </button>
+                    <button id="btnToggleSide" class="btn icon-btn" title="Toggle Settings">
+						<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm440-80h120v-560H640v560Zm-80 0v-560H200v560h360Zm80 0h120-120Z"/></svg>
+                    </button>
+                </div>
+            </header>
+
+            <div class="canvas-shadow top"></div>
+
+            <div class="content-wrapper" id="contentWrapper">
+                <!-- Text Editor -->
+                <textarea id="textEditor" placeholder="लेख लिखा..." spellcheck="true"></textarea>
+
+                <!-- Output Panel -->
+                <div id="readingPanel" class="hidden"></div>
+            </div>
+
+            <div class="canvas-shadow bottom"></div>
+
+        </main>
+
+        <!-- Sidebar Pop-up -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2>Settings</h2>
+                <button id="btnCloseSide" class="btn icon-btn"><svg class="msx" viewBox="0 -960 960 960"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg></button>
+            </div>
+
+            <div class="sidebar-content">
+
+                <div class="setting-group">
+                    <label>Operation Mode</label>
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-mode="writing">
+							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M5 21q-.425 0-.712-.288T4 20v-2.425q0-.4.15-.763t.425-.637L17.175 3.6q.3-.3.675-.45T18.6 3q.4 0 .763.15T20 3.6L21.4 5q.3.275.45.638T22 6.4q0 .375-.15.75t-.45.675l-12.575 12.6q-.275.275-.637.425t-.763.15zm1-2h1.4l9.825-9.8l-.7-.725l-.725-.7L6 17.6zM20 6.425L18.575 5zm-3.475 2.05l-.725-.7L17.225 9.2zM14 21q1.85 0 3.425-.925T19 17.5q0-.8-.4-1.388t-1.05-1.087q-.35-.25-.75-.25t-.675.3t-.275.738t.35.687q.35.275.575.5t.225.5q0 .575-.913 1.038T14 19q-.425 0-.712.288T13 20t.288.713T14 21M9 6q0 .35-.437.638T6.55 7.65q-2 .875-2.775 1.588T3 11q0 .65.3 1.15t.775.875q.325.275.725.238t.675-.363t.25-.725t-.35-.675q-.175-.125-.275-.25T5 11q0-.3.45-.6t1.9-.925q2.2-.95 2.925-1.725T11 6q0-1.375-1.1-2.187T7 3q-1.125 0-2.013.4t-1.362.975Q3.35 4.7 3.4 5.1t.375.65q.325.275.725.225t.675-.325q.35-.35.775-.5T7 5q1.025 0 1.513.3T9 6"/></svg>
+							Writing
+						</button>
+                        <button class="toggle-btn" data-mode="reading">
+							<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M260-320q47 0 91.5 10.5T440-278v-394q-41-24-87-36t-93-12q-36 0-71.5 7T120-692v396q35-12 69.5-18t70.5-6Zm260 42q44-21 88.5-31.5T700-320q36 0 70.5 6t69.5 18v-396q-33-14-68.5-21t-71.5-7q-47 0-93 12t-87 36v394Zm-66.5 93.5Q441-188 430-194q-39-23-82-34.5T260-240q-42 0-82.5 11T100-198q-21 11-40.5-1T40-234v-482q0-11 5.5-21T62-752q46-24 96-36t102-12q58 0 113.5 15T480-740q51-30 106.5-45T700-800q52 0 102 12t96 36q11 5 16.5 15t5.5 21v482q0 23-19.5 35t-40.5 1q-37-20-77.5-31T700-240q-45 0-88 11.5T530-194q-11 6-23.5 9.5T480-181q-14 0-26.5-3.5ZM280-494Zm280-115q0-9 6.5-18.5T581-640q29-10 58-15t61-5q20 0 39.5 2.5T778-651q9 2 15.5 10t6.5 18q0 17-11 25t-28 4q-14-3-29.5-4.5T700-600q-26 0-51 5t-48 13q-18 7-29.5-1T560-609Zm0 220q0-9 6.5-18.5T581-420q29-10 58-15t61-5q20 0 39.5 2.5T778-431q9 2 15.5 10t6.5 18q0 17-11 25t-28 4q-14-3-29.5-4.5T700-380q-26 0-51 4.5T601-363q-18 7-29.5-.5T560-389Zm0-110q0-9 6.5-18.5T581-530q29-10 58-15t61-5q20 0 39.5 2.5T778-541q9 2 15.5 10t6.5 18q0 17-11 25t-28 4q-14-3-29.5-4.5T700-490q-26 0-51 5t-48 13q-18 7-29.5-1T560-499Z"/></svg>
+							Reading
+						</button>
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label for="voiceSelect">
+						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M23 9q0 1.725-.612 3.288t-1.663 2.837q-.3.35-.75.375t-.8-.325q-.325-.325-.3-.775t.3-.825q.75-.95 1.163-2.125T20.75 9t-.412-2.425t-1.163-2.1q-.3-.375-.312-.825t.312-.8t.788-.338t.762.363q1.05 1.275 1.663 2.838T23 9m-4.55 0q0 .8-.25 1.538t-.7 1.362q-.275.375-.737.388t-.813-.338q-.325-.325-.337-.787t.212-.888q.15-.275.238-.6T16.15 9t-.088-.675t-.237-.625q-.225-.425-.213-.875t.338-.775q.35-.35.813-.338t.737.388q.45.625.7 1.363T18.45 9M9 13q-1.65 0-2.825-1.175T5 9t1.175-2.825T9 5t2.825 1.175T13 9t-1.175 2.825T9 13m-8 6v-.8q0-.825.425-1.55t1.175-1.1q1.275-.65 2.875-1.1T9 14t3.525.45t2.875 1.1q.75.375 1.175 1.1T17 18.2v.8q0 .825-.587 1.413T15 21H3q-.825 0-1.412-.587T1 19m2 0h12v-.8q0-.275-.137-.5t-.363-.35q-.9-.45-2.312-.9T9 16t-3.187.45t-2.313.9q-.225.125-.363.35T3 18.2zm7.413-8.587Q11 9.825 11 9t-.587-1.412T9 7t-1.412.588T7 9t.588 1.413T9 11t1.413-.587M9 19"/></svg>
+						Voice
+					</label>
+                    <select id="voiceSelect" class="input-element">
+                        <option value="">Loading Voices...</option>
+                    </select>
+                </div>
+
+                <div class="setting-group" id="delayGroup">
+                    <label for="pacingSlider">
+						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M8 20h8v-3q0-1.65-1.175-2.825T12 13t-2.825 1.175T8 17zm6.825-10.175Q16 8.65 16 7V4H8v3q0 1.65 1.175 2.825T12 11t2.825-1.175M5 22q-.425 0-.712-.288T4 21t.288-.712T5 20h1v-3q0-1.525.713-2.863T8.7 12q-1.275-.8-1.987-2.137T6 7V4H5q-.425 0-.712-.288T4 3t.288-.712T5 2h14q.425 0 .713.288T20 3t-.288.713T19 4h-1v3q0 1.525-.712 2.863T15.3 12q1.275.8 1.988 2.138T18 17v3h1q.425 0 .713.288T20 21t-.288.713T19 22z"/></svg>
+						Reading Delay
+					</label>
+                    <div class="slider-wrapper">
+                        <input type="range" id="pacingSlider" min="0" max="100" step="10" value="50">
+                        <span id="pacingSliderVal" class="slider-value">50%</span>
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label for="speechRate">
+						<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M480-316.5q38-.5 56-27.5l169-253q9-14-2.5-25.5T677-625L424-456q-27 18-28.5 55t22.5 61q24 24 62 23.5Zm0-483.5q36 0 71 6t68 19q16 6 34 22.5t10 31.5q-8 15-36 20t-45-1q-25-9-50.5-13.5T480-720q-133 0-226.5 93.5T160-400q0 42 11.5 83t32.5 77h552q23-38 33.5-79t10.5-85q0-26-4.5-51T782-504q-6-17-2-33t18-27q13-10 28.5-6t21.5 18q15 35 23 71.5t9 74.5q1 57-13 109t-41 99q-11 18-30 28t-40 10H204q-21 0-40-10t-30-28q-26-45-40-95.5T80-400q0-83 31.5-155.5t86-127Q252-737 325-768.5T480-800Zm7 313Z"/></svg>
+						Voice Speed
+					</label>
+                    <div class="slider-wrapper">
+                        <input type="range" id="speechRate" min="0.5" max="2" step="0.1" value="1.0">
+                        <span id="speechRateVal" class="slider-value">1.0x</span>
+                    </div>
+                </div>
+
+                <hr class="divider">
+
+                <h3>Appearance</h3>
+
+                <div class="setting-group">
+                    <label for="textSize">
+						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M14.827 6.25h-4.308q-.256 0-.436-.18t-.18-.438t.18-.444T10.52 5h9.866q.256 0 .436.18q.179.18.179.438q0 .257-.18.444t-.435.188h-4.308v12.135q0 .256-.18.436q-.18.179-.438.179q-.257 0-.444-.185q-.188-.185-.188-.45zm-8.865 4.904H3.616q-.257 0-.436-.18q-.18-.18-.18-.438q0-.257.18-.445t.436-.187h5.923q.256 0 .435.18t.18.438t-.18.444t-.435.188H7.192v7.23q0 .257-.18.436q-.18.18-.437.18q-.258 0-.435-.18q-.178-.179-.178-.436z" stroke-width="1" stroke="currentColor"/></svg>
+						Text Size
+					</label>
+                    <div class="slider-wrapper">
+                        <input type="range" id="textSize" min="16" max="48" step="2" value="24">
+                        <span id="textSizeVal" class="slider-value">24px</span>
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label for="lineSpacing">
+						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="m5 7.85l-.9.875Q3.825 9 3.413 9T2.7 8.7q-.275-.275-.275-.7t.275-.7l2.6-2.6q.15-.15.325-.212T6 4.425t.375.063t.325.212l2.6 2.6q.275.275.288.688T9.3 8.7q-.275.275-.687.288T7.9 8.725L7 7.85v8.3l.9-.875Q8.175 15 8.588 15t.712.3q.275.275.275.7t-.275.7l-2.6 2.6q-.15.15-.325.213T6 19.575t-.375-.062T5.3 19.3l-2.6-2.6q-.275-.275-.288-.687T2.7 15.3q.275-.275.688-.288t.712.263l.9.875zM13 19q-.425 0-.712-.288T12 18t.288-.712T13 17h8q.425 0 .713.288T22 18t-.288.713T21 19zm0-6q-.425 0-.712-.288T12 12t.288-.712T13 11h8q.425 0 .713.288T22 12t-.288.713T21 13zm0-6q-.425 0-.712-.288T12 6t.288-.712T13 5h8q.425 0 .713.288T22 6t-.288.713T21 7z"/></svg>
+						Line Height
+					</label>
+                    <div class="slider-wrapper">
+                        <input type="range" id="lineSpacing" min="1.0" max="3.0" step="0.1" value="1.8">
+                        <span id="lineSpacingVal" class="slider-value">1.8</span>
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label for="maxWidth">
+						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M3 20V4q0-.425.288-.712T4 3t.713.288T5 4v16q0 .425-.288.713T4 21t-.712-.288T3 20m16 0V4q0-.425.288-.712T20 3t.713.288T21 4v16q0 .425-.288.713T20 21t-.712-.288T19 20m-7.712-7.287Q11 12.425 11 12t.288-.712T12 11t.713.288T13 12t-.288.713T12 13t-.712-.288m-4 0Q7 12.426 7 12t.288-.712T8 11t.713.288T9 12t-.288.713T8 13t-.712-.288m8 0Q15 12.426 15 12t.288-.712T16 11t.713.288T17 12t-.288.713T16 13t-.712-.288"/></svg>
+						Max Width
+					</label>
+                    <div class="slider-wrapper">
+                        <input type="range" id="maxWidth" min="600" max="1200" step="50" value="800">
+                        <span id="maxWidthVal" class="slider-value">800px</span>
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label for="letterSpacing">
+						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M3 20q-.425 0-.712-.288T2 19V5q0-.425.288-.712T3 4t.713.288T4 5v14q0 .425-.288.713T3 20m17.288-.288Q20 19.426 20 19V5q0-.425.288-.712T21 4t.713.288T22 5v14q0 .425-.288.713T21 20t-.712-.288M8.525 17q-.425 0-.675-.35t-.1-.75l3.15-8.35q.1-.25.3-.4t.475-.15h.65q.275 0 .475.15t.3.4l3.15 8.375q.15.4-.087.737T15.5 17q-.275 0-.475-.15t-.3-.4l-.7-2h-4.05l-.725 2.025q-.075.25-.275.388t-.45.137m1.975-4h3l-1.45-4.15h-.1z"/></svg>
+						Letter Spacing
+					</label>
+                    <div class="slider-wrapper">
+                        <input type="range" id="letterSpacing" min="0" max="2" step="0.25" value="0">
+                        <span id="letterSpacingVal" class="slider-value">0px</span>
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label for="wordSpacing">
+						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M2 12h2v5h16v-5h2v5a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2Z"/></svg>
+						Word Spacing
+					</label>
+                    <div class="slider-wrapper">
+                        <input type="range" id="wordSpacing" min="0" max="20" step="2" value="0">
+                        <span id="wordSpacingVal" class="slider-value">0px</span>
+                    </div>
+                </div>
+
+            </div>
+        </aside>
+    </div>
+</body>
+</html>

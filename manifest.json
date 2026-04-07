@@ -1,0 +1,29 @@
+{
+	"name": "लेख पाठक",
+	"short_name": "लेख पाठक",
+	"description": "अपने लेख को सुनते हुए लिखे",
+	"start_url": "/",
+	"display": "standalone",
+	"background_color": "#fdfefe",
+	"theme_color": "#fdfefe",
+	"orientation": "any",
+	"icons": [{
+			"src": "/icon-180x180px.jpg",
+			"sizes": "180x180",
+			"type": "image/jpeg",
+			"purpose": "any"
+		},
+		{
+			"src": "/icon-192x192px.jpg",
+			"sizes": "192x192",
+			"type": "image/jpeg",
+			"purpose": "any"
+		},
+		{
+			"src": "/icon-512x512px.jpg",
+			"sizes": "512x512",
+			"type": "image/jpeg",
+			"purpose": "any"
+		}
+	]
+}
