@@ -111,6 +111,14 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: #0000; }
 
+:focus-visible,
+.focusable:focus-within {
+    outline: none !important;
+    --ring-offset: 2px;
+    --ring-width: 2px;
+    box-shadow: 0 0 0 var(--ring-offset) var(--color-bg), 0 0 0 calc(var(--ring-offset) + var(--ring-width)) var(--color-primary) !important;
+}
+
 body {
     font-family: var(--font-family);
     background-color: var(--color-bg);
@@ -208,11 +216,11 @@ textarea#textEditor, #readingPanel {
 #textEditor { resize: none; overflow-y: auto; }
 .hidden { display: none !important; }
 
-.paragraph { margin-bottom: calc(var(--dynamic-text-size) * var(--dynamic-line-spacing) * 0.8); white-space: pre-wrap; }
+.paragraph { margin-bottom: calc(var(--dynamic-text-size) * var(--dynamic-line-spacing) * 0.8); white-space: pre-wrap; text-align: justify; }
 .paragraph:last-child { margin-bottom: 0; }
 .paragraph.active-para { outline: 5px solid #b5d5ff; border-radius: 15px; outline-offset: 15px; }
 
-.dictation-unit { border-radius: 6px; transition: background-color 0.15s ease, color 0.15s ease; cursor: pointer; box-decoration-break: clone; -webkit-box-decoration-break: clone; padding: 2px 0; }
+.dictation-unit { border-radius: 6px; transition: background-color 0.15s ease, color 0.15s ease; cursor: pointer; box-decoration-break: clone; -webkit-box-decoration-break: clone; padding: 2px 0;  outline: 3px solid #b5d5ff;   outline-offset: 2px;  }
 .dictation-unit.block-unit { display: inline; padding: 2px 8px; border-radius: 8px; margin: 4px; border: 1px solid transparent; }
 .dictation-unit:hover { background-color: var(--color-secondary-container); }
 .dictation-unit.block-unit:hover { border-color: var(--color-outline-variant); }
@@ -237,11 +245,16 @@ textarea#textEditor, #readingPanel {
 .sidebar-content h3 { font-size: 0.85rem; color: var(--color-text-muted); font-weight: 600; margin-bottom: -8px; text-transform: uppercase; letter-spacing: 0.05em;}
 
 .setting-group label { display: flex; align-items: center; gap: 10px; font-size: 0.95rem; font-weight: 500; margin-bottom: 12px; color: var(--color-text); }
-.input-element { width: 100%; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--color-outline-variant); font-family: inherit; background-color: var(--color-surface-dim); font-size: 0.95rem; outline: none; transition: border-color 0.2s, box-shadow 0.2s; color: var(--color-text); }
-.input-element:focus { border-color: var(--color-primary); box-shadow: 0 0 0 4px var(--color-primary-container); }
+.input-element { width: 100%; padding: 14px 40px 14px 16px; border-radius: 14px; border: 1px solid var(--color-outline-variant); font-family: inherit; background-color: var(--color-surface-dim); font-size: 0.95rem; outline: none; transition: border-color 0.2s, box-shadow 0.2s; color: var(--color-text); }
+.input-element:focus { border-color: var(--color-primary); }
+
+.chunking-options { margin-top: 15px; display: flex; flex-direction: column; gap: 10px; }
+.smart-chunk-toggle-label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem; }
+.chunk-size-group { display: flex; flex-direction: column; gap: 5px; }
+.chunk-size-label { font-size: 0.85rem; display: flex; justify-content: space-between; }
 
 .slider-wrapper { display: flex; align-items: center; gap: 16px; }
-.slider-wrapper input[type="range"] { flex: 1; accent-color: var(--color-primary); height: 4px; }
+.slider-wrapper input[type="range"] { flex: 1; accent-color: var(--color-primary); height: 7px; border-radius: 4px; }
 .slider-value { font-size: 0.9rem; font-weight: 600; color: var(--color-on-primary-container); background: var(--color-primary-container); padding: 6px 12px; border-radius: 10px; min-width: 65px; text-align: center; }
 
 .toggle-group { display: flex; background: var(--color-surface-dim); border-radius: 16px; padding: 6px; }
@@ -249,3 +262,55 @@ textarea#textEditor, #readingPanel {
 .toggle-btn.active { background: var(--color-surface); box-shadow: 0 4px 12px rgba(0,0,0,0.06); color: var(--color-primary); }
 
 .divider { border: none; box-shadow: 0 0 0 1px var(--color-outline-variant); margin: 5px 0; }
+
+/* Custom Checkbox Styles */
+.custom-checkbox {
+  flex: 0 0 auto;
+  position: relative;
+  width: 20px;
+  height: 20px;
+  background-color: var(--color-surface-dim);
+  border-radius: 3px;
+  outline: 2px solid var(--color-outline) !important;
+  outline-offset: -2px;
+  transition: box-shadow 200ms ease, outline-color 200ms ease;
+  cursor: pointer;
+}
+
+.custom-checkbox input {
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.custom-checkbox .checkmark {
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z'/%3E%3C/svg%3E")
+    var(--color-primary) center / 15px no-repeat;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 200ms ease;
+  pointer-events: none;
+}
+
+.custom-checkbox input:checked + .checkmark {
+  opacity: 1;
+}
+
+.custom-checkbox input:disabled + .checkmark {
+  opacity: .4;
+}
+
+.custom-checkbox input:disabled {
+  cursor: not-allowed;
+}
+
+/* Focus styles for custom checkbox handled by global .focusable rules */
+.custom-checkbox:has(input:focus-visible) {
+  outline-color: var(--color-primary) !important;
+}

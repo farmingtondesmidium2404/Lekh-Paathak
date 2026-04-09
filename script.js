@@ -36,7 +36,10 @@ const dom = {
     letterSpacingVal: document.getElementById('letterSpacingVal'),
     wordSpacing: document.getElementById('wordSpacing'),
     wordSpacingVal: document.getElementById('wordSpacingVal'),
-    delayGroup: document.getElementById('delayGroup')
+    delayGroup: document.getElementById('delayGroup'),
+    checkChunking: document.getElementById('checkChunking'),
+    chunkSize: document.getElementById('chunkSize'),
+    chunkSizeVal: document.getElementById('chunkSizeVal')
 };
 
 let state = {
@@ -52,7 +55,9 @@ let state = {
         text_size: 24, line_spacing: 1.8, max_width: 800,
         letter_spacing: 0, word_spacing: 0,
         voiceToken: '', pacing: 50, speech_rate: 1.0, op_mode: 'writing',
-        theme: 'light'
+        theme: 'light',
+        use_chunking: true,
+        chunk_size: 3
     }
 };
 
@@ -66,7 +71,12 @@ const digitMap = {
 function toHindi(text, isHindi = true) {
     if (text === '-') return isHindi ? 'हाइफन' : 'hyphen';
     if (text === '/') return isHindi ? 'बट्टे' : 'slash';
-    return text.toString().replace(/[0-9+\-×÷²³]/g, (match) => digitMap[match] || match);
+
+    let processed = text.toString()
+        .replace(/([^\d\s])-([^\d\s])/g, isHindi ? '$1 हाइफन $2' : '$1 hyphen $2')
+        .replace(/([^\s])\/([^\s])/g, isHindi ? '$1 बट्टे $2' : '$1 slash $2');
+
+    return processed.replace(/[0-9+\-×÷²³]/g, (match) => digitMap[match] || match);
 }
 
 // Audio Bell Singleton
@@ -198,6 +208,15 @@ function updateSettings() {
     state.settings.word_spacing = parseInt(dom.wordSpacing.value);
     dom.wordSpacingVal.textContent = state.settings.word_spacing + 'px';
 
+    if (dom.checkChunking) {
+        state.settings.use_chunking = dom.checkChunking.checked;
+        state.settings.chunk_size = parseInt(dom.chunkSize.value);
+        dom.chunkSizeVal.textContent = state.settings.chunk_size;
+
+        let chunkGroup = document.getElementById('chunkSizeGroup');
+        if(chunkGroup) chunkGroup.style.display = state.settings.use_chunking ? 'flex' : 'none';
+    }
+
     if (dom.voiceSelect.value !== "") {
         let v = state.voicesAvailable[dom.voiceSelect.value];
         if (v) state.settings.voiceToken = v.name;
@@ -208,8 +227,13 @@ function updateSettings() {
 }
 
 ['pacingSlider', 'speechRate', 'textSize', 'lineSpacing', 'maxWidth', 'letterSpacing', 'wordSpacing'].forEach(id => {
-    dom[id].addEventListener('input', updateSettings);
+    if(dom[id]) dom[id].addEventListener('input', updateSettings);
 });
+
+if (dom.checkChunking) {
+    dom.checkChunking.addEventListener('change', () => { updateSettings(); if (!state.isEditing) renderOutput(); });
+    dom.chunkSize.addEventListener('input', () => { updateSettings(); if (!state.isEditing) renderOutput(); });
+}
 
 dom.voiceSelect.addEventListener('change', () => { stopTTS(); updateSettings(); });
 
@@ -243,6 +267,11 @@ function loadSettings() {
         dom.letterSpacing.value = state.settings.letter_spacing || 0;
         dom.wordSpacing.value = state.settings.word_spacing || 0;
 
+        if (state.settings.use_chunking !== undefined && dom.checkChunking) {
+            dom.checkChunking.checked = state.settings.use_chunking;
+            dom.chunkSize.value = state.settings.chunk_size;
+        }
+
         state.operationMode = state.settings.op_mode;
 
         dom.modeToggles.forEach(b => b.classList.toggle('active', b.dataset.mode === state.operationMode));
@@ -269,27 +298,126 @@ function setEditMode(isEdit) {
     state.isEditing = isEdit;
 
     if (isEdit) {
+        let savedScroll = dom.panel.scrollTop;
         dom.btnEdit.classList.add('active');
         dom.btnRead.classList.remove('active');
         dom.editor.classList.remove('hidden');
         dom.panel.classList.add('hidden');
         dom.centerPlayback.classList.add('disabled');
         // Perfect scroll sync
-        dom.editor.scrollTop = dom.panel.scrollTop;
+        dom.editor.scrollTop = savedScroll;
     } else {
+        let savedScroll = dom.editor.scrollTop;
         dom.btnRead.classList.add('active');
         dom.btnEdit.classList.remove('active');
         dom.editor.classList.add('hidden');
         dom.panel.classList.remove('hidden');
         dom.centerPlayback.classList.remove('disabled');
+
         renderOutput();
         // Perfect scroll sync
-        dom.panel.scrollTop = dom.editor.scrollTop;
+        dom.panel.scrollTop = savedScroll;
     }
 }
 
 function wrapSymbols(text) {
     return text.replace(/([,\-\/\(\)।\.!?])/g, '<span class="sym-em">$1</span>');
+}
+
+// --- REFINED LINGUISTIC DICTIONARIES ---
+const terminators = new Set(['है', 'हैं', 'हूँ', 'हो', 'था', 'थी', 'थे', 'होगा', 'होगी', 'होंगे', 'सकता', 'सकती', 'सकते', 'चुका', 'चुकी', 'चुके', 'गया', 'गई', 'गए', 'वाला', 'वाली', 'वाले', 'चाहिए', 'रहा', 'रही', 'रहे', 'हुए', 'हुई', 'हुआ']);
+const connectors = new Set(['का', 'के', 'की']); // ALWAYS demand an object target after them
+const postpositions = new Set(['से', 'में', 'पर', 'ने', 'को', 'तक', 'द्वारा']); // End a phrase, don't necessarily pull the next word
+const secondaryTargets = new Set(['लिए', 'वास्ते', 'साथ', 'पास', 'बाद', 'पहले', 'कारण', 'ओर', 'तरफ', 'संबंधित', 'अनुसार', 'दौरान']);
+// Removed word-level conjunctions (और, एवं) so they don't fracture noun phrases like "प्रस्तावना एवं निष्कर्ष"
+const clauseBreakers = new Set(['कि', 'क्योंकि', 'इसलिए', 'लेकिन', 'परंतु', 'अतः', 'अर्थात', 'अगर', 'यदि']);
+
+function chunkHindiTextForTTS(text, baseLimit) {
+    const words = text.trim().split(/\s+/).filter(w => w.length > 0);
+    const chunks = [];
+    let currentChunk = [];
+    let i = 0;
+
+    const clean = (w) => w.replace(/[.,;!?।'"()]/g, '');
+    const hasPunctuation = (w) => /[.,;!?।]/.test(w);
+
+    while (i < words.length) {
+        let word = words[i];
+        let cleanWord = clean(word);
+
+        // RULE 1: STRONG CLAUSE BREAKERS
+        if (clauseBreakers.has(cleanWord) && currentChunk.length > 0) {
+            if (cleanWord === 'कि') {
+                currentChunk.push(word);
+                chunks.push(currentChunk.join(' '));
+                currentChunk = [];
+                i++;
+                continue;
+            } else {
+                chunks.push(currentChunk.join(' '));
+                currentChunk = [];
+            }
+        }
+
+        currentChunk.push(word);
+        let wordHasPunc = hasPunctuation(word);
+        let isTerminator = terminators.has(cleanWord);
+
+        let nextIsTerminator = false;
+        if (i + 1 < words.length) {
+           nextIsTerminator = terminators.has(clean(words[i + 1]));
+        }
+
+        // Break if punctuation is hit, or if a terminator phrase is fully finished
+        let hardStop = wordHasPunc || (isTerminator && !nextIsTerminator);
+
+        if (hardStop || currentChunk.length >= baseLimit) {
+
+            // Track if the word that triggered the limit was a Connector ('के')
+            let recentlyPulledConnector = connectors.has(cleanWord);
+
+            // SMART PULL AHEAD LOOP
+            while (i + 1 < words.length) {
+                let nextWord = words[i + 1];
+                let nextClean = clean(nextWord);
+                let nextHasPunc = hasPunctuation(nextWord);
+                let shouldPull = false;
+
+                if (terminators.has(nextClean)) {
+                    shouldPull = true; // Always group verbs
+                }
+                else if (connectors.has(nextClean) || postpositions.has(nextClean)) {
+                    shouldPull = true; // Always group case markers
+                    if (connectors.has(nextClean)) {
+                        recentlyPulledConnector = true; // Flag that we need to pull a target next!
+                    }
+                }
+                else if (recentlyPulledConnector || secondaryTargets.has(nextClean)) {
+                    // If we just pulled 'के', we MUST pull the target ('उत्तर', 'प्रश्न', 'साथ')
+                    shouldPull = true;
+                    recentlyPulledConnector = false; // Reset after successfully pulling the target
+                }
+
+                if (shouldPull) {
+                    currentChunk.push(nextWord);
+                    i++;
+                    if (nextHasPunc) {
+                        break; // Break instantly if pulled word has punctuation
+                    }
+                } else {
+                    break; // Not a glue word or target, stop looking ahead.
+                }
+            }
+
+            chunks.push(currentChunk.join(' '));
+            currentChunk = [];
+        }
+
+        i++;
+    }
+
+    if (currentChunk.length > 0) chunks.push(currentChunk.join(' '));
+    return chunks;
 }
 
 // --- Text Parsing & Rendering ---
@@ -298,10 +426,7 @@ function renderOutput() {
     state.units = [];
     state.currentIndex = 0;
 
-    // Split hyphens bridging normal words
-    const text = dom.editor.value.trim()
-        .replace(/([^\d\s])-([^\d\s])/g, '$1 - $2')
-        .replace(/([^\s])\/([^\s])/g, '$1 / $2');
+    const text = dom.editor.value.trim();
     if (!text) return;
 
     const paragraphs = text.split(/\n+/);
@@ -319,7 +444,7 @@ function renderOutput() {
                 if(!sent.trim()) return;
                 const span = document.createElement('span');
                 span.className = 'dictation-unit block-unit';
-                span.innerHTML = wrapSymbols(sent) + ' ';
+                span.innerHTML = wrapSymbols(sent);
                 span.dataset.index = uIndex;
                 span.onclick = () => jumpTo(parseInt(span.dataset.index), true);
                 pEl.appendChild(span);
@@ -328,25 +453,30 @@ function renderOutput() {
                 uIndex++;
             });
         } else {
-            // Words for 'writing' mode
+            // Chunks for 'writing' mode (formerly word-by-word)
             const sentences = para.split(/(?<=[.!?|।])\s+/);
             sentences.forEach((sent, sIdx) => {
-                const words = sent.match(/\S+/g) || [];
-                words.forEach(word => {
-                    if(!word.trim()) return;
+                let chunks = [];
+                if (state.settings.use_chunking) {
+                    chunks = chunkHindiTextForTTS(sent, state.settings.chunk_size || 3);
+                } else {
+                    chunks = sent.match(/\S+/g) || [];
+                }
+                chunks.forEach(chunk => {
+                    if(!chunk.trim()) return;
                     const span = document.createElement('span');
                     span.className = 'dictation-unit';
-                    span.innerHTML = wrapSymbols(word);
+                    span.innerHTML = wrapSymbols(chunk);
                     span.dataset.index = uIndex;
                     span.onclick = () => jumpTo(parseInt(span.dataset.index), true);
 
                     pEl.appendChild(span);
                     pEl.appendChild(document.createTextNode(' '));
 
-                    let isSymbol = /^[^a-zA-Z0-9\u0900-\u097F]+$/.test(word);
-                    if (word === '-' || word === '/') isSymbol = false;
+                    let isSymbol = /^[^a-zA-Z0-9\u0900-\u097F]+$/.test(chunk);
+                    if (chunk === '-' || chunk === '/') isSymbol = false;
 
-                    state.units.push({ el: span, text: word, paraIdx: pIdx, sentIdx: sIdx, isSymbol: isSymbol });
+                    state.units.push({ el: span, text: chunk, paraIdx: pIdx, sentIdx: sIdx, isSymbol: isSymbol });
                     uIndex++;
                 });
             });
@@ -440,8 +570,9 @@ function speakNext() {
     updateUI();
     scrollToActive();
 
-    // Pacing value: 0 (slowest wait) to 100 (fastest / minimal wait).
-    let invMult = 2.0 - (state.settings.pacing / 100) * 1.9;
+    // Pacing mapped to User Multiplier (0 to 100): 0 -> 1.0x (slow), 50 -> 0.7x (normal), 100 -> 0.4x (fast)
+    let pacingVal = Math.max(0, Math.min(100, parseInt(state.settings.pacing) || 50));
+    let userMultiplier = 1.0 - (pacingVal / 100) * 0.6;
 
     if (state.operationMode === 'writing' && unit.isSymbol) {
         let bellTimes = 0;
@@ -451,13 +582,13 @@ function speakNext() {
 
         if (bellTimes > 0) playBell(bellTimes);
 
-        let extraDelay = (bellTimes > 0) ? 600 * invMult : 0;
+        let extraDelay = (bellTimes > 0) ? 600 * userMultiplier : 0;
 
         state.delayTimer = setTimeout(() => {
             if(currentSid !== state.sessionId) return;
             state.currentIndex++;
             speakNext();
-        }, 150 * invMult + extraDelay);
+        }, 150 * userMultiplier + extraDelay);
         return;
     }
 
@@ -496,16 +627,23 @@ function speakNext() {
 
         if (bellTimes > 0 && state.operationMode === 'writing') playBell(bellTimes);
 
-        let extraDelay = (bellTimes > 0) ? (state.operationMode === 'writing' ? 600 * invMult : 600) : 0;
+        let extraDelay = (bellTimes > 0) ? (state.operationMode === 'writing' ? 600 * userMultiplier : 600) : 0;
 
         state.currentIndex++;
 
         let delay = 0;
         if (state.operationMode === 'writing') {
-            let len = unit.text.replace(/[^a-zA-Z0-9\u0900-\u097F]/g, "").length;
-            delay = invMult * (200 + (len * 100)) + extraDelay;
+            // Count actual characters (vowel marks will count as separate characters which is correct for writing strokes)
+            let charCount = unit.text.replace(/[^a-zA-Z0-9\u0900-\u097F]/g, "").length;
+
+            // Base timing: 700ms per character
+            let baseTime = charCount * 700;
+            // Extra delay buffer: 1000ms at the end of each physical group for drawing shirorekha/lifting pen
+            let bufferTime = 1000;
+
+            delay = (baseTime + bufferTime) * userMultiplier + extraDelay;
         } else {
-            delay = 400 + extraDelay;
+            delay = (400 * userMultiplier) + extraDelay;
         }
 
         state.delayTimer = setTimeout(() => {
