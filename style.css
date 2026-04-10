@@ -26,7 +26,7 @@
     --color-surface-dim: #f3f5f9;
     --color-primary: #1d4ed8;
     --color-on-primary: #ffffff;
-    --color-primary-container: #dbeafe;
+    --color-primary-container: #c4ddff;
     --color-on-primary-container: #1e3a8a;
 
     --color-secondary-container: #e2e8f0;
@@ -211,23 +211,50 @@ textarea#textEditor, #readingPanel {
     letter-spacing: var(--dynamic-letter-spacing); word-spacing: var(--dynamic-word-spacing);
     font-family: var(--font-family); font-weight: 500;
 	background: transparent; border: none; outline: none; color: var(--color-text);
+	scrollbar-color: var(--color-text-muted) var(--color-bg);
 }
 
 #textEditor { resize: none; overflow-y: auto; }
 .hidden { display: none !important; }
 
-.paragraph { margin-bottom: calc(var(--dynamic-text-size) * var(--dynamic-line-spacing) * 0.8); white-space: pre-wrap; text-align: justify; }
+.paragraph { margin-bottom: calc(var(--dynamic-text-size) * 0.4); white-space: pre-wrap; text-align: justify; }
 .paragraph:last-child { margin-bottom: 0; }
-.paragraph.active-para { outline: 5px solid #b5d5ff; border-radius: 15px; outline-offset: 15px; }
+.paragraph.active-para { outline: 5px solid #b5d5ff; border-radius: .3em; outline-offset: 15px; }
+.para-gap { height: calc(var(--dynamic-text-size) * var(--dynamic-line-spacing) * 0.6); }
 
-.dictation-unit { border-radius: 6px; transition: background-color 0.15s ease, color 0.15s ease; cursor: pointer; box-decoration-break: clone; -webkit-box-decoration-break: clone; padding: 2px 0;  outline: 3px solid #b5d5ff;   outline-offset: 2px;  }
+.paragraph.md-hr {
+    border: 3px solid var(--color-text-muted);
+    margin: 1.5em 0;
+}
+.paragraph.md-equals {
+    border-top: 4px solid var(--color-text-muted);
+    border-bottom: 4px solid var(--color-text-muted);
+    height: 5px;
+    margin: 1.5em 0;
+    box-sizing: content-box;
+}
+
+.paragraph.md-h1 { font-size: 1.3em; font-weight: 700; margin-top: 1em; }
+.paragraph.md-h2 { font-size: 1.2em; font-weight: 700; margin-top: 0.8em; }
+.paragraph.md-h3 { font-size: 1.1em; font-weight: 600; margin-top: 0.6em; }
+
+.paragraph.md-bullet { padding-left: 1.5em; text-indent: -0.5em; }
+.paragraph.md-bullet::before { content: "•"; padding-right: 0.6em; font-weight: bold; display: inline-block; }
+
+.paragraph.md-ordered { padding-left: 2em; text-indent: -1em; }
+.paragraph.md-ordered::before { content: attr(data-list-val); padding-right: 0.4em; font-weight: 600; display: inline-block; }
+
+.md-bold { font-weight: 700; }
+.md-italic { font-style: italic; }
+
+.dictation-unit { border-radius: .3em; transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease; cursor: pointer; padding: 2px 0;  /* outline: 3px solid #b5d5ff; outline-offset: 2px; */  }
 .dictation-unit.block-unit { display: inline; padding: 2px 8px; border-radius: 8px; margin: 4px; border: 1px solid transparent; }
-.dictation-unit:hover { background-color: var(--color-secondary-container); }
+.dictation-unit:hover { background-color: var(--color-secondary-container); box-shadow: 3px 0 0 2px var(--color-secondary-container), -3px 0 0 2px var(--color-secondary-container); }
 .dictation-unit.block-unit:hover { border-color: var(--color-outline-variant); }
 .dictation-unit.playing { background-color: var(--color-primary-container); color: var(--color-on-primary-container); box-shadow: 3px 0 0 2px var(--color-primary-container), -3px 0 0 2px var(--color-primary-container); }
 .sym-em { background-color: #01d08c8a; font-weight: 500; padding: 1px 4px 4px; border-radius: 5px; margin: 0 2px; }
 
-.sidebar { background-color: color-mix(in srgb, var(--color-surface) 95%, transparent); display: flex; flex-direction: column; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s; position: fixed; z-index: 100; backdrop-filter: blur(16px); }
+.sidebar { background-color: rgba(255,255,255,60%); display: flex; flex-direction: column; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s; position: fixed; z-index: 100; backdrop-filter: blur(16px); }
 
 @media (min-width: 769px) {
     .sidebar { right: 24px; top: 24px; height: calc(100vh - 48px); width: 360px; border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04); transform: translateX(calc(100% + 40px)); opacity: 0; pointer-events: none; }
@@ -246,12 +273,6 @@ textarea#textEditor, #readingPanel {
 
 .setting-group label { display: flex; align-items: center; gap: 10px; font-size: 0.95rem; font-weight: 500; margin-bottom: 12px; color: var(--color-text); }
 .input-element { width: 100%; padding: 14px 40px 14px 16px; border-radius: 14px; border: 1px solid var(--color-outline-variant); font-family: inherit; background-color: var(--color-surface-dim); font-size: 0.95rem; outline: none; transition: border-color 0.2s, box-shadow 0.2s; color: var(--color-text); }
-.input-element:focus { border-color: var(--color-primary); }
-
-.chunking-options { margin-top: 15px; display: flex; flex-direction: column; gap: 10px; }
-.smart-chunk-toggle-label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem; }
-.chunk-size-group { display: flex; flex-direction: column; gap: 5px; }
-.chunk-size-label { font-size: 0.85rem; display: flex; justify-content: space-between; }
 
 .slider-wrapper { display: flex; align-items: center; gap: 16px; }
 .slider-wrapper input[type="range"] { flex: 1; accent-color: var(--color-primary); height: 7px; border-radius: 4px; }
@@ -270,7 +291,7 @@ textarea#textEditor, #readingPanel {
   width: 20px;
   height: 20px;
   background-color: var(--color-surface-dim);
-  border-radius: 3px;
+  border-radius: 6px;
   outline: 2px solid var(--color-outline) !important;
   outline-offset: -2px;
   transition: box-shadow 200ms ease, outline-color 200ms ease;

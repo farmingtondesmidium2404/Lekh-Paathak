@@ -37,6 +37,7 @@ const dom = {
     wordSpacing: document.getElementById('wordSpacing'),
     wordSpacingVal: document.getElementById('wordSpacingVal'),
     delayGroup: document.getElementById('delayGroup'),
+    chunkSettingsGroup: document.getElementById('chunkSettingsGroup'),
     checkChunking: document.getElementById('checkChunking'),
     chunkSize: document.getElementById('chunkSize'),
     chunkSizeVal: document.getElementById('chunkSizeVal')
@@ -64,19 +65,17 @@ let state = {
 const digitMap = {
     '0': '०', '1': '१', '2': '२', '3': '३', '4': '४',
     '5': '५', '6': '६', '7': '७', '8': '८', '9': '९',
-    '+': ' जमा ', '-': ' घटा ', '×': ' गुणा ', '÷': ' बटे ',
+    '+': ' जमा ', '×': ' गुणा ', '÷': ' बटे ',
     '²': ' का स्क्वैर, ', '³': ' का क्यूब, '
 };
 
 function toHindi(text, isHindi = true) {
-    if (text === '-') return isHindi ? 'हाइफन' : 'hyphen';
-    if (text === '/') return isHindi ? 'बट्टे' : 'slash';
-
     let processed = text.toString()
-        .replace(/([^\d\s])-([^\d\s])/g, isHindi ? '$1 हाइफन $2' : '$1 hyphen $2')
-        .replace(/([^\s])\/([^\s])/g, isHindi ? '$1 बट्टे $2' : '$1 slash $2');
+        .replace(/-/g, isHindi ? ' हाइफन ' : ' hyphen ')
+        .replace(/\//g, isHindi ? ' बट्टे ' : ' slash ')
+        .replace(/,/g, isHindi ? ' कौमा ' : ' comma ');
 
-    return processed.replace(/[0-9+\-×÷²³]/g, (match) => digitMap[match] || match);
+    return processed.replace(/[0-9+×÷²³]/g, (match) => digitMap[match] || match);
 }
 
 // Audio Bell Singleton
@@ -214,7 +213,7 @@ function updateSettings() {
         dom.chunkSizeVal.textContent = state.settings.chunk_size;
 
         let chunkGroup = document.getElementById('chunkSizeGroup');
-        if(chunkGroup) chunkGroup.style.display = state.settings.use_chunking ? 'flex' : 'none';
+        if(chunkGroup) chunkGroup.style.display = state.settings.use_chunking ? 'block' : 'none';
     }
 
     if (dom.voiceSelect.value !== "") {
@@ -246,6 +245,7 @@ dom.modeToggles.forEach(btn => {
         state.settings.op_mode = btn.dataset.mode;
         state.operationMode = state.settings.op_mode;
         dom.delayGroup.style.display = state.operationMode === 'writing' ? 'block' : 'none';
+        if (dom.chunkSettingsGroup) dom.chunkSettingsGroup.style.display = state.operationMode === 'writing' ? 'block' : 'none';
         updateSettings();
         if (!state.isEditing) renderOutput();
     });
@@ -276,6 +276,7 @@ function loadSettings() {
 
         dom.modeToggles.forEach(b => b.classList.toggle('active', b.dataset.mode === state.operationMode));
         dom.delayGroup.style.display = state.operationMode === 'writing' ? 'block' : 'none';
+        if (dom.chunkSettingsGroup) dom.chunkSettingsGroup.style.display = state.operationMode === 'writing' ? 'block' : 'none';
 
         updateSettings();
         applyTheme(state.settings.theme || 'light');
@@ -287,6 +288,15 @@ window.onload = () => { loadSettings(); initVoices(); setEditMode(true); };
 // Sidebar
 dom.btnToggleSide.onclick = () => dom.sidebar.classList.toggle('open');
 dom.btnCloseSide.onclick = () => dom.sidebar.classList.remove('open');
+document.addEventListener('click', (e) => {
+    if (dom.sidebar.classList.contains('open')) {
+        if (!dom.sidebar.contains(e.target) && !dom.btnToggleSide.contains(e.target)) {
+            dom.sidebar.classList.remove('open');
+            e.stopPropagation();
+            e.preventDefault();
+        }
+    }
+}, true);
 
 // --- Edit/Read View Toggle ---
 
@@ -298,16 +308,21 @@ function setEditMode(isEdit) {
     state.isEditing = isEdit;
 
     if (isEdit) {
-        let savedScroll = dom.panel.scrollTop;
+        let maxScrollFrom = Math.max(1, dom.panel.scrollHeight - dom.panel.clientHeight);
+        let ratio = dom.panel.scrollTop / maxScrollFrom;
+
         dom.btnEdit.classList.add('active');
         dom.btnRead.classList.remove('active');
         dom.editor.classList.remove('hidden');
         dom.panel.classList.add('hidden');
         dom.centerPlayback.classList.add('disabled');
-        // Perfect scroll sync
-        dom.editor.scrollTop = savedScroll;
+
+        let maxScrollTo = Math.max(1, dom.editor.scrollHeight - dom.editor.clientHeight);
+        dom.editor.scrollTop = ratio * maxScrollTo;
     } else {
-        let savedScroll = dom.editor.scrollTop;
+        let maxScrollFrom = Math.max(1, dom.editor.scrollHeight - dom.editor.clientHeight);
+        let ratio = dom.editor.scrollTop / maxScrollFrom;
+
         dom.btnRead.classList.add('active');
         dom.btnEdit.classList.remove('active');
         dom.editor.classList.add('hidden');
@@ -315,13 +330,14 @@ function setEditMode(isEdit) {
         dom.centerPlayback.classList.remove('disabled');
 
         renderOutput();
-        // Perfect scroll sync
-        dom.panel.scrollTop = savedScroll;
+
+        let maxScrollTo = Math.max(1, dom.panel.scrollHeight - dom.panel.clientHeight);
+        dom.panel.scrollTop = ratio * maxScrollTo;
     }
 }
 
 function wrapSymbols(text) {
-    return text.replace(/([,\-\/\(\)।\.!?])/g, '<span class="sym-em">$1</span>');
+    return text.replace(/([,\-\/\(\)।\.!?:;])/g, '<span class="sym-em">$1</span>');
 }
 
 // --- REFINED LINGUISTIC DICTIONARIES ---
@@ -338,8 +354,8 @@ function chunkHindiTextForTTS(text, baseLimit) {
     let currentChunk = [];
     let i = 0;
 
-    const clean = (w) => w.replace(/[.,;!?।'"()]/g, '');
-    const hasPunctuation = (w) => /[.,;!?।]/.test(w);
+    const clean = (w) => w.replace(/[.,;!?।'"()\*_:]/g, '');
+    const hasPunctuation = (w) => /[.,;!?:।]/.test(w);
 
     while (i < words.length) {
         let word = words[i];
@@ -383,7 +399,10 @@ function chunkHindiTextForTTS(text, baseLimit) {
                 let nextHasPunc = hasPunctuation(nextWord);
                 let shouldPull = false;
 
-                if (terminators.has(nextClean)) {
+                if (nextClean === '-' || nextClean === '/') {
+                    shouldPull = true;
+                }
+                else if (terminators.has(nextClean)) {
                     shouldPull = true; // Always group verbs
                 }
                 else if (connectors.has(nextClean) || postpositions.has(nextClean)) {
@@ -401,6 +420,9 @@ function chunkHindiTextForTTS(text, baseLimit) {
                 if (shouldPull) {
                     currentChunk.push(nextWord);
                     i++;
+                    if (nextClean === '-' || nextClean === '/') {
+                        break; // Close the group immediately after pulling isolated symbol
+                    }
                     if (nextHasPunc) {
                         break; // Break instantly if pulled word has punctuation
                     }
@@ -429,32 +451,74 @@ function renderOutput() {
     const text = dom.editor.value.trim();
     if (!text) return;
 
-    const paragraphs = text.split(/\n+/);
+    const lines = text.split('\n');
     let uIndex = 0;
+    let currentBlockIdx = 0;
+    const fragment = document.createDocumentFragment();
 
-    paragraphs.forEach((para, pIdx) => {
-        if (!para.trim()) return;
+    lines.forEach((line, lIdx) => {
+        let pText = line.trim();
+        if (!pText) {
+            const gap = document.createElement('div');
+            gap.className = 'para-gap';
+            fragment.appendChild(gap);
+            currentBlockIdx++;
+            return;
+        }
+
         const pEl = document.createElement('div');
         pEl.className = 'paragraph';
 
+        if (/^-{3,}$/.test(pText)) { pEl.classList.add('md-hr'); pText = ''; }
+        else if (/^={3,}$/.test(pText)) { pEl.classList.add('md-equals'); pText = ''; }
+        else if (pText.startsWith('### ')) { pEl.classList.add('md-h3'); pText = pText.substring(4); }
+        else if (pText.startsWith('## ')) { pEl.classList.add('md-h2'); pText = pText.substring(3); }
+        else if (pText.startsWith('# ')) { pEl.classList.add('md-h1'); pText = pText.substring(2); }
+        else if (pText.startsWith('- ')) { pEl.classList.add('md-bullet'); pText = pText.substring(2); }
+        else if (/^\d+\.\s/.test(pText)) {
+            let match = pText.match(/^(\d+\.\s)/);
+            pEl.classList.add('md-ordered');
+            pEl.setAttribute('data-list-val', match[0].trim());
+            pText = pText.substring(match[0].length);
+        }
+
+        if (!pText) {
+            fragment.appendChild(pEl);
+            return;
+        }
+
+        let inBold = false;
+        let inItalic = false;
+
         if (state.operationMode === 'reading') {
-            // Split natively into full sentences for 'reading' mode
-            const sentences = para.split(/(?<=[.!?|।])\s+/);
+            const sentences = pText.split(/(?<=[.!?|।])\s+/);
             sentences.forEach((sent, sIdx) => {
                 if(!sent.trim()) return;
+
+                let touchedBold = inBold;
+                let touchedItalic = inItalic;
+                let cleanText = '';
+                for(let c of sent) {
+                    if (c === '*') { inBold = !inBold; touchedBold = true; }
+                    else if (c === '_') { inItalic = !inItalic; touchedItalic = true; }
+                    else cleanText += c;
+                }
+
                 const span = document.createElement('span');
                 span.className = 'dictation-unit block-unit';
-                span.innerHTML = wrapSymbols(sent);
+                if (touchedBold) span.classList.add('md-bold');
+                if (touchedItalic) span.classList.add('md-italic');
+
+                span.innerHTML = wrapSymbols(cleanText);
                 span.dataset.index = uIndex;
                 span.onclick = () => jumpTo(parseInt(span.dataset.index), true);
                 pEl.appendChild(span);
 
-                state.units.push({ el: span, text: sent, paraIdx: pIdx, sentIdx: sIdx, isSymbol: false });
+                state.units.push({ el: span, text: cleanText, paraIdx: currentBlockIdx, sentIdx: sIdx, isSymbol: false });
                 uIndex++;
             });
         } else {
-            // Chunks for 'writing' mode (formerly word-by-word)
-            const sentences = para.split(/(?<=[.!?|।])\s+/);
+            const sentences = pText.split(/(?<=[.!?|।])\s+/);
             sentences.forEach((sent, sIdx) => {
                 let chunks = [];
                 if (state.settings.use_chunking) {
@@ -464,25 +528,40 @@ function renderOutput() {
                 }
                 chunks.forEach(chunk => {
                     if(!chunk.trim()) return;
+
+                    let touchedBold = inBold;
+                    let touchedItalic = inItalic;
+                    let cleanText = '';
+                    for(let c of chunk) {
+                        if (c === '*') { inBold = !inBold; touchedBold = true; }
+                        else if (c === '_') { inItalic = !inItalic; touchedItalic = true; }
+                        else cleanText += c;
+                    }
+
                     const span = document.createElement('span');
                     span.className = 'dictation-unit';
-                    span.innerHTML = wrapSymbols(chunk);
+                    if (touchedBold) span.classList.add('md-bold');
+                    if (touchedItalic) span.classList.add('md-italic');
+
+                    span.innerHTML = wrapSymbols(cleanText);
                     span.dataset.index = uIndex;
                     span.onclick = () => jumpTo(parseInt(span.dataset.index), true);
 
                     pEl.appendChild(span);
                     pEl.appendChild(document.createTextNode(' '));
 
-                    let isSymbol = /^[^a-zA-Z0-9\u0900-\u097F]+$/.test(chunk);
-                    if (chunk === '-' || chunk === '/') isSymbol = false;
+                    let isSymbol = /^[^a-zA-Z0-9\u0900-\u097F]+$/.test(cleanText);
+                    if (cleanText === '-' || cleanText === '/') isSymbol = false;
 
-                    state.units.push({ el: span, text: chunk, paraIdx: pIdx, sentIdx: sIdx, isSymbol: isSymbol });
+                    state.units.push({ el: span, text: cleanText, paraIdx: currentBlockIdx, sentIdx: sIdx, isSymbol: isSymbol });
                     uIndex++;
                 });
             });
         }
-        dom.panel.appendChild(pEl);
+        fragment.appendChild(pEl);
     });
+
+    dom.panel.appendChild(fragment);
 }
 
 // --- Smart Auto Scroll ---
@@ -629,8 +708,6 @@ function speakNext() {
 
         let extraDelay = (bellTimes > 0) ? (state.operationMode === 'writing' ? 600 * userMultiplier : 600) : 0;
 
-        state.currentIndex++;
-
         let delay = 0;
         if (state.operationMode === 'writing') {
             // Count actual characters (vowel marks will count as separate characters which is correct for writing strokes)
@@ -648,6 +725,7 @@ function speakNext() {
 
         state.delayTimer = setTimeout(() => {
             if (currentSid !== state.sessionId) return;
+            state.currentIndex++;
             speakNext();
         }, delay);
     };

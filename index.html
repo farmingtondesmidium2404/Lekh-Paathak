@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 
 <head>
 	<meta charset="UTF-8">
@@ -184,22 +184,28 @@
 							Reading
 						</button>
 					</div>
+				</div>
 
-					<div class="chunking-options">
-						<label class="smart-chunk-toggle-label">
-							<div class="custom-checkbox focusable">
-								<input type="checkbox" id="checkChunking" checked>
-								<span class="checkmark"></span>
-							</div>
-							Enable Smart Chunking
+				<div class="setting-group" id="chunkSettingsGroup">
+					<label for="checkChunking">
+						<div class="custom-checkbox focusable">
+							<input type="checkbox" id="checkChunking" checked>
+							<span class="checkmark"></span>
+						</div>
+						Enable Smart Chunking
+					</label>
+
+					<div id="chunkSizeGroup">
+						<label for="chunkSize">
+							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+								<path fill="currentColor"
+									d="M1 16V8q0-.425.288-.712T2 7h4q.425 0 .713.288T7 8v8q0 .425-.288.713T6 17H2q-.425 0-.712-.288T1 16m8 0V8q0-.425.288-.712T10 7h4q.425 0 .713.288T15 8v8q0 .425-.288.713T14 17h-4q-.425 0-.712-.288T9 16m8 0V8q0-.425.288-.712T18 7h4q.425 0 .713.288T23 8v8q0 .425-.288.713T22 17h-4q-.425 0-.712-.288T17 16M3 15h2V9H3zm16 0h2V9h-2z" />
+							</svg>
+							Word Limit Sensitivity
 						</label>
-						<div id="chunkSizeGroup" class="chunk-size-group">
-							<label for="chunkSize" class="chunk-size-label">
-								Word Limit Sensitivity <span id="chunkSizeVal" class="slider-value">3</span>
-							</label>
-							<div class="slider-wrapper">
-								<input type="range" id="chunkSize" min="2" max="6" step="1" value="3">
-							</div>
+						<div class="slider-wrapper">
+							<input type="range" id="chunkSize" min="2" max="6" step="1" value="3">
+							<span id="chunkSizeVal" class="slider-value">3</span>
 						</div>
 					</div>
 				</div>
@@ -259,7 +265,7 @@
 						Text Size
 					</label>
 					<div class="slider-wrapper">
-						<input type="range" id="textSize" min="16" max="48" step="2" value="24">
+						<input type="range" id="textSize" min="16" max="64" step="2" value="24">
 						<span id="textSizeVal" class="slider-value">24px</span>
 					</div>
 				</div>
@@ -277,7 +283,6 @@
 						<span id="lineSpacingVal" class="slider-value">1.8</span>
 					</div>
 				</div>
-
 				<div class="setting-group">
 					<label for="maxWidth">
 						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
@@ -287,7 +292,7 @@
 						Max Width
 					</label>
 					<div class="slider-wrapper">
-						<input type="range" id="maxWidth" min="600" max="1200" step="50" value="800">
+						<input type="range" id="maxWidth" min="600" max="1400" step="50" value="800">
 						<span id="maxWidthVal" class="slider-value">800px</span>
 					</div>
 				</div>
