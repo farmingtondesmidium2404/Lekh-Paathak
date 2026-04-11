@@ -165,7 +165,10 @@ select {
 .center-playback.disabled { opacity: 0.4; pointer-events: none; filter: grayscale(100%); }
 
 @media (max-width: 768px) {
-    .toolbar { z-index: 45; }
+    .toolbar {
+		z-index: 45;
+		padding: 16px 20px;
+	}
     .center-playback {
         position: fixed; bottom: 0; left: 0; right: 0;
         transform: none;
@@ -214,6 +217,37 @@ textarea#textEditor, #readingPanel {
 	scrollbar-color: var(--color-text-muted) var(--color-bg);
 }
 
+#readingPanel { padding-top: 0px; }
+
+.est-time-wrapper {
+    position: sticky;
+    top: 12px;
+    z-index: 20;
+    margin: 0 auto 12px auto;
+    width: max-content;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-muted);
+    background: var(--color-surface);
+	background: rgba(255,255,255, 80%);
+	backdrop-filter: blur(16px);
+    border: 1px solid var(--color-outline-variant);
+    font-size: 0.85em;
+    font-weight: 600;
+    gap: 10px;
+    padding: 6px 14px;
+    border-radius: 30px;
+    user-select: none;
+    pointer-events: none;
+    opacity: 0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    transition: opacity 0.3s;
+}
+.est-time-wrapper.hidden {
+    display: none !important;
+}
+
 #textEditor { resize: none; overflow-y: auto; }
 .hidden { display: none !important; }
 
@@ -248,7 +282,7 @@ textarea#textEditor, #readingPanel {
 .md-italic { font-style: italic; }
 
 .dictation-unit { border-radius: .3em; transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease; cursor: pointer; padding: 2px 0;  /* outline: 3px solid #b5d5ff; outline-offset: 2px; */  }
-.dictation-unit.block-unit { display: inline; padding: 2px 8px; border-radius: 8px; margin: 4px; border: 1px solid transparent; }
+.dictation-unit.block-unit { display: inline; padding: 2px 8px; border-radius: 8px; margin: 4px; }
 .dictation-unit:hover { background-color: var(--color-secondary-container); box-shadow: 3px 0 0 2px var(--color-secondary-container), -3px 0 0 2px var(--color-secondary-container); }
 .dictation-unit.block-unit:hover { border-color: var(--color-outline-variant); }
 .dictation-unit.playing { background-color: var(--color-primary-container); color: var(--color-on-primary-container); box-shadow: 3px 0 0 2px var(--color-primary-container), -3px 0 0 2px var(--color-primary-container); }

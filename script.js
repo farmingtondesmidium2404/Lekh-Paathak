@@ -2,12 +2,16 @@
 const dom = {
     editor: document.getElementById('textEditor'),
     panel: document.getElementById('readingPanel'),
+    readingContent: document.getElementById('readingContent'),
+    estTimeVal: document.getElementById('estTimeVal'),
+    estTimeWrapper: document.getElementById('estTimeWrapper'),
     wrapper: document.getElementById('contentWrapper'),
 
     btnEdit: document.getElementById('btnEditMode'),
     btnRead: document.getElementById('btnReadMode'),
     btnToggleSide: document.getElementById('btnToggleSide'),
     btnCloseSide: document.getElementById('btnCloseSide'),
+    btnToggleTime: document.getElementById('btnToggleTime'),
     sidebar: document.getElementById('sidebar'),
     centerPlayback: document.getElementById('centerPlayback'),
 
@@ -58,8 +62,11 @@ let state = {
         voiceToken: '', pacing: 50, speech_rate: 1.0, op_mode: 'writing',
         theme: 'light',
         use_chunking: true,
-        chunk_size: 3
-    }
+        chunk_size: 3,
+        show_time_estimate: true
+    },
+    ttsSpeed: { msPerChar: 70 },
+    ttsStartTimestamp: 0
 };
 
 const digitMap = {
@@ -222,6 +229,7 @@ function updateSettings() {
     }
 
     applyCSSVars();
+    if (!state.isEditing) calculateEstimatedTime();
     localStorage.setItem('rs_settings', JSON.stringify(state.settings));
 }
 
@@ -235,6 +243,15 @@ if (dom.checkChunking) {
 }
 
 dom.voiceSelect.addEventListener('change', () => { stopTTS(); updateSettings(); });
+
+if (dom.btnToggleTime) {
+    dom.btnToggleTime.addEventListener('click', () => {
+        state.settings.show_time_estimate = !state.settings.show_time_estimate;
+        if (dom.estTimeWrapper) dom.estTimeWrapper.classList.toggle('hidden', !state.settings.show_time_estimate);
+        dom.btnToggleTime.style.opacity = state.settings.show_time_estimate ? '1' : '0.5';
+        localStorage.setItem('rs_settings', JSON.stringify(state.settings));
+    });
+}
 
 // Mode Toggles
 dom.modeToggles.forEach(btn => {
@@ -258,6 +275,10 @@ function loadSettings() {
 
         let saved = JSON.parse(localStorage.getItem('rs_settings'));
         if (saved) state.settings = { ...state.settings, ...saved };
+
+        if (state.settings.show_time_estimate === undefined) state.settings.show_time_estimate = true;
+        if (dom.btnToggleTime) dom.btnToggleTime.style.opacity = state.settings.show_time_estimate ? '1' : '0.5';
+        if (dom.estTimeWrapper) dom.estTimeWrapper.classList.toggle('hidden', !state.settings.show_time_estimate);
 
         dom.pacingSlider.value = state.settings.pacing;
         dom.speechRate.value = state.settings.speech_rate;
@@ -442,9 +463,71 @@ function chunkHindiTextForTTS(text, baseLimit) {
     return chunks;
 }
 
+// --- Execution Time Estimation ---
+function calculateEstimatedTime() {
+    if (state.units.length === 0 || state.isEditing) {
+        if (dom.estTimeVal) dom.estTimeVal.parentElement.style.opacity = '0';
+        return;
+    }
+    
+    if (dom.estTimeVal) dom.estTimeVal.parentElement.style.opacity = '1';
+    
+    let pacingVal = Math.max(0, Math.min(100, parseInt(state.settings.pacing) || 50));
+    let userMultiplier = 1.0 - (pacingVal / 100) * 0.6;
+    let totalMs = 0;
+    
+    for (let i = state.currentIndex; i < state.units.length; i++) {
+        let unit = state.units[i];
+        
+        let bellTimes = 0;
+        let nextUnit = state.units[i + 1];
+        if (nextUnit && nextUnit.paraIdx > unit.paraIdx) bellTimes = 2;
+        else if (/[।\.!?]$/.test(unit.text.trim()) || (unit.isSymbol && /[।\.!?]/.test(unit.text))) bellTimes = 1;
+
+        let extraDelay = (bellTimes > 0) ? (state.operationMode === 'writing' ? 600 * userMultiplier : 600) : 0;
+        let delay = 0;
+        let ttsTime = 0;
+        
+        if (state.operationMode === 'writing') {
+            if (unit.isSymbol) {
+                delay = 150 * userMultiplier + extraDelay;
+                ttsTime = 500; 
+            } else {
+                let charCount = unit.text.replace(/[^a-zA-Z0-9\u0900-\u097F]/g, "").length;
+                let baseTime = charCount * 700;
+                let bufferTime = 1000;
+                delay = (baseTime + bufferTime) * userMultiplier + extraDelay;
+                ttsTime = charCount * state.ttsSpeed.msPerChar; 
+            }
+        } else {
+            delay = (400 * userMultiplier) + extraDelay;
+            let charCount = unit.text.replace(/[^a-zA-Z0-9\u0900-\u097F]/g, "").length;
+            ttsTime = charCount * state.ttsSpeed.msPerChar;
+        }
+        
+        totalMs += ttsTime + delay;
+    }
+    
+    let totalSeconds = Math.ceil(totalMs / 1000);
+    let mins = Math.floor(totalSeconds / 60);
+    let secs = totalSeconds % 60;
+    let hrs = Math.floor(mins / 60);
+    mins = mins % 60;
+    
+    if (dom.estTimeVal) {
+        if (hrs > 0) {
+            dom.estTimeVal.textContent = `${hrs}h ${mins}m ${secs.toString().padStart(2, '0')}s`;
+        } else if (mins > 0) {
+            dom.estTimeVal.textContent = `${mins}m ${secs.toString().padStart(2, '0')}s`;
+        } else {
+            dom.estTimeVal.textContent = `${secs}s`;
+        }
+    }
+}
+
 // --- Text Parsing & Rendering ---
 function renderOutput() {
-    dom.panel.innerHTML = '';
+    if(dom.readingContent) dom.readingContent.innerHTML = '';
     state.units = [];
     state.currentIndex = 0;
 
@@ -561,7 +644,8 @@ function renderOutput() {
         fragment.appendChild(pEl);
     });
 
-    dom.panel.appendChild(fragment);
+    if(dom.readingContent) dom.readingContent.appendChild(fragment);
+    calculateEstimatedTime();
 }
 
 // --- Smart Auto Scroll ---
@@ -613,6 +697,7 @@ function updateUI() {
 
     document.querySelectorAll('.paragraph').forEach(p => p.classList.remove('active-para'));
     if (activePara) activePara.classList.add('active-para');
+    calculateEstimatedTime();
 }
 
 function stopTTS() {
@@ -696,8 +781,37 @@ function speakNext() {
         ut.rate = state.settings.speech_rate;
     }
 
-    ut.onend = () => {
+    ut.onstart = () => {
+        state.ttsStartTimestamp = Date.now();
+    };
+
+    ut.onend = (e) => {
         if (currentSid !== state.sessionId) return;
+
+        if (state.ttsStartTimestamp > 0) {
+            let elapsed = e.elapsedTime || (Date.now() - state.ttsStartTimestamp);
+            if (elapsed > 0) {
+                let cleanText = unit.text.trim();
+                // Accept basic Hindi + silent punctuations
+                if (/^[\u0900-\u097F\s"'`:;]+$/.test(cleanText) && cleanText.length > 0) {
+                    let wordCount = cleanText.split(/\s+/).filter(w => w.length > 0).length;
+                    
+                    if (wordCount >= 3) {
+                        // Exclude silent punctuations and space for true character length. (\u0964 is Poornviram)
+                        let realChars = cleanText.replace(/[\s"'`:;\u0964]/g, "").length;
+                        
+                        if (realChars > 0) {
+                            let speed = elapsed / realChars;
+                            if (speed > 10 && speed < 300) {
+                                state.ttsSpeed.msPerChar = (state.ttsSpeed.msPerChar * 0.7) + (speed * 0.3);
+                                console.log(`[TTS Speed Updated] Learned from pure Hindi chunk: "${cleanText}" | Speed: ${speed.toFixed(2)} ms/char | New Average: ${state.ttsSpeed.msPerChar.toFixed(2)} ms/char`);
+                                calculateEstimatedTime();
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         let bellTimes = 0;
         let nextUnit = state.units[state.currentIndex + 1];
