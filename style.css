@@ -229,8 +229,7 @@ textarea#textEditor, #readingPanel {
     align-items: center;
     justify-content: center;
     color: var(--color-text-muted);
-    background: var(--color-surface);
-	background: rgba(255,255,255, 80%);
+	background: color-mix(in srgb, var(--color-surface) 80%, transparent);
 	backdrop-filter: blur(16px);
     border: 1px solid var(--color-outline-variant);
     font-size: 0.85em;
@@ -268,8 +267,8 @@ textarea#textEditor, #readingPanel {
     box-sizing: content-box;
 }
 
-.paragraph.md-h1 { font-size: 1.3em; font-weight: 700; margin-top: 1em; }
-.paragraph.md-h2 { font-size: 1.2em; font-weight: 700; margin-top: 0.8em; }
+.paragraph.md-h1 { font-size: 1.3em; font-weight: 700; margin-top: 1em; text-align: center; }
+.paragraph.md-h2 { font-size: 1.2em; font-weight: 700; margin-top: 0.8em; border-bottom: 2px solid var(--color-outline-variant); }
 .paragraph.md-h3 { font-size: 1.1em; font-weight: 600; margin-top: 0.6em; }
 
 .paragraph.md-bullet { padding-left: 1.5em; text-indent: -0.5em; }
@@ -282,13 +281,14 @@ textarea#textEditor, #readingPanel {
 .md-italic { font-style: italic; }
 
 .dictation-unit { border-radius: .3em; transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease; cursor: pointer; padding: 2px 0;  /* outline: 3px solid #b5d5ff; outline-offset: 2px; */  }
-.dictation-unit.block-unit { display: inline; padding: 2px 8px; border-radius: 8px; margin: 4px; }
+.dictation-unit.block-unit { display: inline; padding: 2px 8px; border-radius: 8px; }
+.dictation-unit.block-unit ~ .dictation-unit.block-unit { margin-left: 15px; }
 .dictation-unit:hover { background-color: var(--color-secondary-container); box-shadow: 3px 0 0 2px var(--color-secondary-container), -3px 0 0 2px var(--color-secondary-container); }
 .dictation-unit.block-unit:hover { border-color: var(--color-outline-variant); }
-.dictation-unit.playing { background-color: var(--color-primary-container); color: var(--color-on-primary-container); box-shadow: 3px 0 0 2px var(--color-primary-container), -3px 0 0 2px var(--color-primary-container); }
+.dictation-unit.playing { background-color: var(--color-primary-container); color: var(--color-on-primary-container); box-shadow: 3px 0 0 2px var(--color-primary-container), -4px 0 0 2px var(--color-primary-container); }
 .sym-em { background-color: #01d08c8a; font-weight: 500; padding: 1px 4px 4px; border-radius: 5px; margin: 0 2px; }
 
-.sidebar { background-color: rgba(255,255,255,60%); display: flex; flex-direction: column; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s; position: fixed; z-index: 100; backdrop-filter: blur(16px); }
+.sidebar { background-color: color-mix(in srgb, var(--color-surface) 60%, transparent); display: flex; flex-direction: column; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s; position: fixed; z-index: 100; backdrop-filter: blur(16px); }
 
 @media (min-width: 769px) {
     .sidebar { right: 24px; top: 24px; height: calc(100vh - 48px); width: 360px; border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04); transform: translateX(calc(100% + 40px)); opacity: 0; pointer-events: none; }

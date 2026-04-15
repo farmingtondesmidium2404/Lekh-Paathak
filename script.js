@@ -63,7 +63,9 @@ let state = {
         theme: 'light',
         use_chunking: true,
         chunk_size: 3,
-        show_time_estimate: true
+        show_time_estimate: true,
+        speech_rate_writing: 1.0,
+        speech_rate_reading: 1.0
     },
     ttsSpeed: { msPerChar: 70 },
     ttsStartTimestamp: 0
@@ -77,10 +79,20 @@ const digitMap = {
 };
 
 function toHindi(text, isHindi = true) {
-    let processed = text.toString()
+    if (state.operationMode === 'reading') return text;
+    let processed = text.toString();
+
+    // Protect hyphen between identical words (e.g., साथ-साथ, एक-एक)
+    const repeatRegex = /(^|[\s.,!?;:'"()।])([^\s.,!?;:'"()\-]+)-\2(?=[\s.,!?;:'"()।]|$)/g;
+    processed = processed.replace(repeatRegex, '$1$2####SKIP####$2');
+
+    processed = processed
         .replace(/-/g, isHindi ? ' हाइफन ' : ' hyphen ')
         .replace(/\//g, isHindi ? ' बट्टे ' : ' slash ')
         .replace(/,/g, isHindi ? ' कौमा ' : ' comma ');
+
+    // Restore protected hyphens
+    processed = processed.replace(/####SKIP####/g, '-');
 
     return processed.replace(/[0-9+×÷²³]/g, (match) => digitMap[match] || match);
 }
@@ -197,6 +209,8 @@ function updateSettings() {
     dom.pacingSliderVal.textContent = state.settings.pacing + '%';
 
     state.settings.speech_rate = parseFloat(dom.speechRate.value);
+    if (state.operationMode === 'writing') state.settings.speech_rate_writing = state.settings.speech_rate;
+    else state.settings.speech_rate_reading = state.settings.speech_rate;
     dom.speechRateVal.textContent = state.settings.speech_rate.toFixed(1) + 'x';
 
     state.settings.text_size = parseInt(dom.textSize.value);
@@ -229,7 +243,10 @@ function updateSettings() {
     }
 
     applyCSSVars();
-    if (!state.isEditing) calculateEstimatedTime();
+    if (!state.isEditing) {
+        calculateEstimatedTime();
+        scrollToActive(true);
+    }
     localStorage.setItem('rs_settings', JSON.stringify(state.settings));
 }
 
@@ -261,6 +278,7 @@ dom.modeToggles.forEach(btn => {
         btn.classList.add('active');
         state.settings.op_mode = btn.dataset.mode;
         state.operationMode = state.settings.op_mode;
+        dom.speechRate.value = state.settings[`speech_rate_${state.operationMode}`] || state.settings.speech_rate || 1.0;
         dom.delayGroup.style.display = state.operationMode === 'writing' ? 'block' : 'none';
         if (dom.chunkSettingsGroup) dom.chunkSettingsGroup.style.display = state.operationMode === 'writing' ? 'block' : 'none';
         updateSettings();
@@ -469,51 +487,58 @@ function calculateEstimatedTime() {
         if (dom.estTimeVal) dom.estTimeVal.parentElement.style.opacity = '0';
         return;
     }
-    
+
     if (dom.estTimeVal) dom.estTimeVal.parentElement.style.opacity = '1';
-    
-    let pacingVal = Math.max(0, Math.min(100, parseInt(state.settings.pacing) || 50));
+
+    let pacingVal = Math.max(-50, Math.min(100, parseInt(state.settings.pacing) || 50));
     let userMultiplier = 1.0 - (pacingVal / 100) * 0.6;
     let totalMs = 0;
-    
+
     for (let i = state.currentIndex; i < state.units.length; i++) {
         let unit = state.units[i];
-        
+
         let bellTimes = 0;
         let nextUnit = state.units[i + 1];
         if (nextUnit && nextUnit.paraIdx > unit.paraIdx) bellTimes = 2;
         else if (/[।\.!?]$/.test(unit.text.trim()) || (unit.isSymbol && /[।\.!?]/.test(unit.text))) bellTimes = 1;
 
-        let extraDelay = (bellTimes > 0) ? (state.operationMode === 'writing' ? 600 * userMultiplier : 600) : 0;
+        let extraDelay = 0;
+        if (state.operationMode === 'writing') {
+            if (bellTimes === 2) extraDelay = 1500 * userMultiplier;
+            else if (bellTimes === 1) extraDelay = 1000 * userMultiplier;
+        }
+
         let delay = 0;
         let ttsTime = 0;
-        
+
         if (state.operationMode === 'writing') {
             if (unit.isSymbol) {
                 delay = 150 * userMultiplier + extraDelay;
-                ttsTime = 500; 
+                ttsTime = 500;
             } else {
                 let charCount = unit.text.replace(/[^a-zA-Z0-9\u0900-\u097F]/g, "").length;
+                let matraCount = (unit.text.match(/[\u093E-\u094C\u0901\u0902\u094D\u093F]/g) || []).length;
+                let complexBuffer = (matraCount > 2) ? (matraCount * 400) : 0;
                 let baseTime = charCount * 700;
-                let bufferTime = 1000;
+                let bufferTime = 1000 + complexBuffer;
                 delay = (baseTime + bufferTime) * userMultiplier + extraDelay;
-                ttsTime = charCount * state.ttsSpeed.msPerChar; 
+                ttsTime = charCount * state.ttsSpeed.msPerChar;
             }
         } else {
-            delay = (400 * userMultiplier) + extraDelay;
+            delay = (150 * userMultiplier) + extraDelay;
             let charCount = unit.text.replace(/[^a-zA-Z0-9\u0900-\u097F]/g, "").length;
             ttsTime = charCount * state.ttsSpeed.msPerChar;
         }
-        
+
         totalMs += ttsTime + delay;
     }
-    
+
     let totalSeconds = Math.ceil(totalMs / 1000);
     let mins = Math.floor(totalSeconds / 60);
     let secs = totalSeconds % 60;
     let hrs = Math.floor(mins / 60);
     mins = mins % 60;
-    
+
     if (dom.estTimeVal) {
         if (hrs > 0) {
             dom.estTimeVal.textContent = `${hrs}h ${mins}m ${secs.toString().padStart(2, '0')}s`;
@@ -594,7 +619,6 @@ function renderOutput() {
 
                 span.innerHTML = wrapSymbols(cleanText);
                 span.dataset.index = uIndex;
-                span.onclick = () => jumpTo(parseInt(span.dataset.index), true);
                 pEl.appendChild(span);
 
                 state.units.push({ el: span, text: cleanText, paraIdx: currentBlockIdx, sentIdx: sIdx, isSymbol: false });
@@ -628,7 +652,6 @@ function renderOutput() {
 
                     span.innerHTML = wrapSymbols(cleanText);
                     span.dataset.index = uIndex;
-                    span.onclick = () => jumpTo(parseInt(span.dataset.index), true);
 
                     pEl.appendChild(span);
                     pEl.appendChild(document.createTextNode(' '));
@@ -642,9 +665,21 @@ function renderOutput() {
             });
         }
         fragment.appendChild(pEl);
+        currentBlockIdx++;
     });
 
     if(dom.readingContent) dom.readingContent.appendChild(fragment);
+
+    dom.readingContent.addEventListener('click', (e) => {
+        const unitEl = e.target.closest('.dictation-unit');
+        if (unitEl) {
+            const selection = window.getSelection().toString();
+            if (selection.trim().length === 0) {
+                jumpTo(parseInt(unitEl.dataset.index), true);
+            }
+        }
+    });
+
     calculateEstimatedTime();
 }
 
@@ -666,8 +701,8 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-function scrollToActive() {
-    if (userScrolling || !state.isPlaying || state.isEditing) return;
+function scrollToActive(force = false) {
+    if ((userScrolling || !state.isPlaying || state.isEditing) && !force) return;
     const activeUnit = state.units[state.currentIndex];
     if (activeUnit && activeUnit.el) {
         activeUnit.el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -735,7 +770,7 @@ function speakNext() {
     scrollToActive();
 
     // Pacing mapped to User Multiplier (0 to 100): 0 -> 1.0x (slow), 50 -> 0.7x (normal), 100 -> 0.4x (fast)
-    let pacingVal = Math.max(0, Math.min(100, parseInt(state.settings.pacing) || 50));
+    let pacingVal = Math.max(-50, Math.min(100, parseInt(state.settings.pacing) || 50));
     let userMultiplier = 1.0 - (pacingVal / 100) * 0.6;
 
     if (state.operationMode === 'writing' && unit.isSymbol) {
@@ -746,7 +781,9 @@ function speakNext() {
 
         if (bellTimes > 0) playBell(bellTimes);
 
-        let extraDelay = (bellTimes > 0) ? 600 * userMultiplier : 0;
+        let extraDelay = 0;
+        if (bellTimes === 2) extraDelay = 1500 * userMultiplier;
+        else if (bellTimes === 1) extraDelay = 1000 * userMultiplier;
 
         state.delayTimer = setTimeout(() => {
             if(currentSid !== state.sessionId) return;
@@ -795,11 +832,11 @@ function speakNext() {
                 // Accept basic Hindi + silent punctuations
                 if (/^[\u0900-\u097F\s"'`:;]+$/.test(cleanText) && cleanText.length > 0) {
                     let wordCount = cleanText.split(/\s+/).filter(w => w.length > 0).length;
-                    
+
                     if (wordCount >= 3) {
                         // Exclude silent punctuations and space for true character length. (\u0964 is Poornviram)
                         let realChars = cleanText.replace(/[\s"'`:;\u0964]/g, "").length;
-                        
+
                         if (realChars > 0) {
                             let speed = elapsed / realChars;
                             if (speed > 10 && speed < 300) {
@@ -820,21 +857,29 @@ function speakNext() {
 
         if (bellTimes > 0 && state.operationMode === 'writing') playBell(bellTimes);
 
-        let extraDelay = (bellTimes > 0) ? (state.operationMode === 'writing' ? 600 * userMultiplier : 600) : 0;
+        let extraDelay = 0;
+        if (state.operationMode === 'writing') {
+            if (bellTimes === 2) extraDelay = 1500 * userMultiplier;
+            else if (bellTimes === 1) extraDelay = 1000 * userMultiplier;
+        } else {
+            if (bellTimes > 0) extraDelay = 200 * userMultiplier;
+        }
 
         let delay = 0;
         if (state.operationMode === 'writing') {
             // Count actual characters (vowel marks will count as separate characters which is correct for writing strokes)
             let charCount = unit.text.replace(/[^a-zA-Z0-9\u0900-\u097F]/g, "").length;
+            let matraCount = (unit.text.match(/[\u093E-\u094C\u0901\u0902\u094D\u093F]/g) || []).length;
+            let complexBuffer = (matraCount > 2) ? (matraCount * 400) : 0;
 
             // Base timing: 700ms per character
             let baseTime = charCount * 700;
             // Extra delay buffer: 1000ms at the end of each physical group for drawing shirorekha/lifting pen
-            let bufferTime = 1000;
+            let bufferTime = 1000 + complexBuffer;
 
             delay = (baseTime + bufferTime) * userMultiplier + extraDelay;
         } else {
-            delay = (400 * userMultiplier) + extraDelay;
+            delay = (150 * userMultiplier) + extraDelay;
         }
 
         state.delayTimer = setTimeout(() => {
@@ -862,8 +907,8 @@ function jumpTo(idx, forcePlay = false) {
         stopTTS();
         state.currentIndex = idx;
         updateUI();
+        scrollToActive(true);
         if (wasPlaying || forcePlay) {
-            scrollToActive();
             state.isPlaying = true;
             speakNext();
         }
